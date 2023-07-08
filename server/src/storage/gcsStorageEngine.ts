@@ -1,21 +1,35 @@
 import { StorageEngine } from "./storageEngine";
+import { Storage } from "@google-cloud/storage";
+
+const storage = new Storage();
 
 export class GcsStorageEngine extends StorageEngine {
   constructor(private bucketName: string) {
     super();
   }
 
-  override getDownloadUrl(oid: string) {
+  private async makeUrl(oid: string, action: "read" | "write") {
+    const expires = Date.now() + 60 * 60 * 1000; // one hour
+    const [signedUrl] = await storage
+      .bucket(this.bucketName)
+      .file(`oid/${oid}`)
+      .getSignedUrl({
+        version: "v4",
+        action,
+        expires,
+      });
+
     return {
-      href: `https://storage.googleapis.com/${this.bucketName}/${oid}`,
-      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24),
+      href: signedUrl,
+      expiresAt: new Date(expires),
     };
   }
 
-  override getUploadUrl(oid: string) {
-    return {
-      href: `https://storage.googleapis.com/${this.bucketName}/${oid}`,
-      expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24),
-    };
+  override async getDownloadUrl(oid: string) {
+    return this.makeUrl(oid, "read");
+  }
+
+  override async getUploadUrl(oid: string) {
+    return this.makeUrl(oid, "write");
   }
 }

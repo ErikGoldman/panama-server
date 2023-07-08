@@ -4,6 +4,6 @@ export interface AuthenticatedUrl {
 }
 
 export abstract class StorageEngine {
-  abstract getDownloadUrl(oid: string): AuthenticatedUrl | null;
-  abstract getUploadUrl(oid: string): AuthenticatedUrl;
+  abstract getDownloadUrl(oid: string): Promise<AuthenticatedUrl | null>;
+  abstract getUploadUrl(oid: string): Promise<AuthenticatedUrl>;
 }
